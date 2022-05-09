@@ -1,0 +1,3 @@
+CPI:        https://fred.stlouisfed.org/series/CPIAUCNS
+M2:         https://fred.stlouisfed.org/series/M2NS
+BTC volume: https://data.bitcoinity.org/markets/volume/all/USD?c=e&t=b
