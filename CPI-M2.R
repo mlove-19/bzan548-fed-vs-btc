@@ -35,8 +35,7 @@ acf(y$CPI, type = "correlation", main = "Autocorrelation of CPIAUC", lag.max = 4
 #ADD
 y_decomp = decompose(y$CPI, type = "additive")
 
-plot(y_decomp$trend)
-plot.ts(y_decomp$seasonal[1:12]) #seasonal effect 
+
 #MULT
 y_decomp_mult = decompose(y$CPI, type = "multiplicative")
 
@@ -55,6 +54,9 @@ y_pred_mult = y_decomp_mult$trend * y_decomp_mult$seasonal
 print(mape(y_pred_add, y$CPI))
 print(mape(y_pred_mult, y$CPI))
 
+#Trend and Seasonality in Additive Plot
+plot.ts(y_decomp$trend, main = "Additive Trend Plot", ylab = 'Trend',col = 'red')
+plot.ts(y_decomp$seasonal[1:12], main = "Additive Seasonality Plot", ylab = 'Seasonl Effect', col = 'blue')  
 
 
 # Testing for stationarity
