@@ -16,9 +16,46 @@ M2 = read.csv(file.choose()) %>% rename(M2 = M2NS)
 
 # join and convert to time series
 y = left_join(CPI, M2, by="DATE") %>% select(-DATE)
-y$cpi = ts(y$cpi, frequency=12, start=c(2012, 1))
+y$CPI = ts(y$CPI, frequency=12, start=c(2012, 1))
 y$M2 = ts(y$M2, frequency=12, start=c(2012, 1))
 plot.ts(y)
+
+#Plotting both time series
+plot.ts(y$CPI, main = "Consumer Price Index For All Urban Consumers", ylab = "CPIAUC", col = "red")
+plot.ts(y$M2, main = "M2 Money Supply", ylab = "M2 (Billions)", col = "blue")
+
+#Mean and standard deviation of CPI ts
+mean(y$CPI)
+sd(y$CPI)
+
+#Autocorrelation Plot
+acf(y$CPI, type = "correlation", main = "Autocorrelation of CPIAUC", lag.max = 40) 
+
+#Additive or Multiplicative 
+#ADD
+y_decomp = decompose(y$CPI, type = "additive")
+
+plot(y_decomp$trend)
+plot.ts(y_decomp$seasonal[1:12]) #seasonal effect 
+#MULT
+y_decomp_mult = decompose(y$CPI, type = "multiplicative")
+
+plot(y_decomp_mult$trend)
+plot.ts(y_decomp_mult$seasonal[1:12])
+
+#MAPE
+mape = function(pred,true){
+  return(mean ( abs( (pred - true) / true ) ,na.rm=T))
+}
+
+
+y_pred_add = y_decomp$trend + y_decomp$seasonal
+y_pred_mult = y_decomp_mult$trend * y_decomp_mult$seasonal 
+
+print(mape(y_pred_add, y$CPI))
+print(mape(y_pred_mult, y$CPI))
+
+
 
 # Testing for stationarity
 adf.test(y$cpi); kpss.test(y$cpi)
