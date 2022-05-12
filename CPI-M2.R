@@ -42,6 +42,7 @@ y_decomp_mult = decompose(y$CPI, type = "multiplicative")
 plot(y_decomp_mult$trend)
 plot.ts(y_decomp_mult$seasonal[1:12])
 
+
 #MAPE
 mape = function(pred,true){
   return(mean ( abs( (pred - true) / true ) ,na.rm=T))
@@ -55,18 +56,15 @@ print(mape(y_pred_add, y$CPI))
 print(mape(y_pred_mult, y$CPI))
 
 #Trend and Seasonality in Additive Plot
-plot.ts(y_decomp$trend, main = "Additive Trend Plot", ylab = 'Trend',col = 'red')
-plot.ts(y_decomp$seasonal[1:12], main = "Additive Seasonality Plot", ylab = 'Seasonl Effect', col = 'blue')  
-
 
 # Testing for stationarity
-adf.test(y$cpi); kpss.test(y$cpi)
-adf.test(y$M2); kpss.test(y$M2)
+adf.test(y$CPI); kpss.test(y$CPI, null="Trend")
+adf.test(y$M2); kpss.test(y$M2, null="Trend")
 
 # Adjusting for seasonality
-cpi_smoothed = HoltWinters(y$cpi, alpha=0.1, beta=FALSE, gamma=FALSE)
+cpi_smoothed = HoltWinters(y$CPI, alpha=0.1, beta=FALSE, gamma=FALSE, seasonal="additive")
 cpi_smoothed = cpi_smoothed$fitted[,"xhat"]
-M2_smoothed = HoltWinters(y$M2, alpha=0.1, beta=FALSE, gamma=FALSE)
+M2_smoothed = HoltWinters(y$M2, alpha=0.1, beta=FALSE, gamma=FALSE, seasonal="additive")
 M2_smoothed = M2_smoothed$fitted[,"xhat"]
 
 for (i in ncol(y)){
@@ -91,4 +89,8 @@ grangertest(cpi ~ M2, data=y_diff) # p < 0.05 --- M2 needed to predict CPI
 grangertest(M2 ~ cpi, data=y_diff) # p > 0.05 --- CPI not needed to predict M2
 
 
-
+# plot.ts(y$CPI)
+# lines(cpi_smoothed, col="red")
+# 
+# plot.ts(y$M2)
+# lines(M2_smoothed, col="red")
