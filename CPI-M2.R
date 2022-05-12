@@ -56,6 +56,8 @@ print(mape(y_pred_add, y$CPI))
 print(mape(y_pred_mult, y$CPI))
 
 #Trend and Seasonality in Additive Plot
+plot.ts(y_decomp$trend, main = "Additive Trend Plot (CPI)", ylab = 'Trend',col = 'red')
+plot.ts(y_decomp$seasonal[1:12], main = "Additive Seasonality Plot (CPI)", ylab = 'Seasonal Effect', col = 'blue')
 
 ################
 # Examining M2 #
@@ -89,9 +91,9 @@ print(mape(y_pred_mult, y$M2))
 plot.ts(y_decomp$trend, main = "Additive Trend Plot (M2)", ylab = 'Trend',col = 'red')
 plot.ts(y_decomp$seasonal[1:12], main = "Additive Seasonality Plot (M2)", ylab = 'Seasonal Effect', col = 'blue')
 
-############################
-# Stationarity Adjustments #
-############################
+#########################
+# Stationarity Analysis #
+#########################
 
 # Testing for stationarity
 adf.test(y$CPI); kpss.test(y$CPI, null="Trend")
@@ -102,6 +104,7 @@ cpi_smoothed = HoltWinters(y$CPI, alpha=0.1, beta=FALSE, gamma=FALSE, seasonal="
 cpi_smoothed = cpi_smoothed$fitted[,"xhat"]
 M2_smoothed = HoltWinters(y$M2, alpha=0.1, beta=FALSE, gamma=FALSE, seasonal="additive")
 M2_smoothed = M2_smoothed$fitted[,"xhat"]
+y_smoothed = data.frame(cpi_smoothed, M2_smoothed) %>% rename(CPI = cpi_smoothed, M2 = M2_smoothed)
 
 for (i in ncol(y)){
   par(mfrow=c(2,1))
@@ -119,14 +122,49 @@ par(mfrow=c(2,1))
 acf(diff(y$cpi)); pacf(diff(log(y$cpi)))
 acf(diff(y$M2)); pacf(diff(log(y$M2)))
 
+######################
+# Forecasting models #
+######################
+
+ndiffs(y$CPI)
+cpi.diff = diff(diff(y$CPI))
+kpss.test(cpi_diff)
+
+# Training/test split (80%/20%)
+i_train = ceiling(0.80*nrow(CPI))
+CPI$DATE[i_train]
+
+# CPI
+cpi_train = window(y$CPI, end=c(2020,3))
+cpi_test = window(y$CPI, start=c(2020,4))
+plot.ts(cpi_train, main="Differenced CPI Test/Train Split", ylab="CPI (differenced)", xlim=c(2012, 2022), ylim=c(230,290))
+lines(cpi_test, col="red")
+legend(x="topleft", legend=c("train", "test"), col=c("black", "red"))
+
+# M2
+# M2_train = window(y$M2, end=c(2020,3))
+# M2_test = window(y$M2, start=c(2020,4))
+# plot.ts(M2_train, main="M2 Test/Train Split", ylab="M2", xlim=c(2012, 2022), ylim=c(10000, 22000))
+# lines(M2_test, col="red")
+# legend(x="topleft", legend=c("train", "test"), col=c("black", "red"))
+
+##### ARIMA model
+arima.model = auto.arima(cpi_train, max.d = 12, max.p = 12, max.q = 12,
+                   max.D = 12, max.P = 12, max.Q = 12,
+                   allowdrift=TRUE)
+arima.pred = arima.model$fitted
+arimaorder(arima.model)
+mape(arima.pred, cpi_train)
+
+arima.fc = forecast(arima.model, h=length(cpi_test))$mean
+plot.ts(y$CPI, xlim=c(2012, 2022))#, ylim=c(-2,3))
+lines(arima.fc, col="blue")
+mape(arima.fc, cpi_test)
+
+##### VARMA model
 y_diff = data.frame(apply(y, MARGIN=2, FUN=diff))
 
 grangertest(cpi ~ M2, data=y_diff) # p < 0.05 --- M2 needed to predict CPI
 grangertest(M2 ~ cpi, data=y_diff) # p > 0.05 --- CPI not needed to predict M2
 
 
-# plot.ts(y$CPI)
-# lines(cpi_smoothed, col="red")
-# 
-# plot.ts(y$M2)
-# lines(M2_smoothed, col="red")
