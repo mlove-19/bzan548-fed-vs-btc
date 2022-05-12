@@ -57,6 +57,42 @@ print(mape(y_pred_mult, y$CPI))
 
 #Trend and Seasonality in Additive Plot
 
+################
+# Examining M2 #
+################
+
+# Mean and standard deviation of M2 ts
+mean(y$M2)
+sd(y$M2)
+
+#Autocorrelation Plot
+acf(y$M2, type = "correlation", main = "Autocorrelation of M2", lag.max = 40) 
+
+#Additive or Multiplicative 
+#ADD
+y_decomp = decompose(y$M2, type = "additive")
+
+
+#MULT
+y_decomp_mult = decompose(y$M2, type = "multiplicative")
+
+plot(y_decomp_mult$trend)
+plot.ts(y_decomp_mult$seasonal[1:12])
+
+y_pred_add = y_decomp$trend + y_decomp$seasonal
+y_pred_mult = y_decomp_mult$trend * y_decomp_mult$seasonal 
+
+print(mape(y_pred_add, y$M2))
+print(mape(y_pred_mult, y$M2))
+
+#Trend and Seasonality in Additive Plot
+plot.ts(y_decomp$trend, main = "Additive Trend Plot (M2)", ylab = 'Trend',col = 'red')
+plot.ts(y_decomp$seasonal[1:12], main = "Additive Seasonality Plot (M2)", ylab = 'Seasonal Effect', col = 'blue')
+
+############################
+# Stationarity Adjustments #
+############################
+
 # Testing for stationarity
 adf.test(y$CPI); kpss.test(y$CPI, null="Trend")
 adf.test(y$M2); kpss.test(y$M2, null="Trend")
