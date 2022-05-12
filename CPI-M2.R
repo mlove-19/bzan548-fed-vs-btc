@@ -20,8 +20,6 @@ y$cpi = ts(y$cpi, frequency=12, start=c(2012, 1))
 y$M2 = ts(y$M2, frequency=12, start=c(2012, 1))
 plot.ts(y)
 
-<<<<<<< Updated upstream
-=======
 # Plotting both time series
 plot.ts(y$CPI, main = "Consumer Price Index For All Urban Consumers", ylab = "CPIAUC", col = "red")
 plot.ts(y$M2, main = "M2 Money Supply", ylab = "M2 (Billions)", col = "blue")
@@ -86,12 +84,6 @@ y_decomp_mult = decompose(y$M2, type = "multiplicative")
 plot(y_decomp_mult$trend)
 plot.ts(y_decomp_mult$seasonal[1:12])
 
-# MAPE
-mape = function(pred,true){
-  return(mean ( abs( (pred - true) / true ) ,na.rm=T))
-}
-
-
 y_pred_add = y_decomp$trend + y_decomp$seasonal
 y_pred_mult = y_decomp_mult$trend * y_decomp_mult$seasonal 
 
@@ -106,7 +98,6 @@ plot.ts(y_decomp$seasonal[1:12], main = "Additive Seasonality Plot (M2)", ylab =
 # Stationarity Adjustments #
 ############################
 
->>>>>>> Stashed changes
 # Testing for stationarity
 adf.test(y$CPI); kpss.test(y$CPI, null="Trend")
 adf.test(y$M2); kpss.test(y$M2, null="Trend")
