@@ -16,19 +16,15 @@ M2 = read.csv(file.choose()) %>% rename(M2 = M2NS)
 
 # join and convert to time series
 y = left_join(CPI, M2, by="DATE") %>% select(-DATE)
-y$cpi = ts(y$cpi, frequency=12, start=c(2012, 1))
+y$CPI = ts(y$CPI, frequency=12, start=c(2012, 1))
 y$M2 = ts(y$M2, frequency=12, start=c(2012, 1))
 plot.ts(y)
 
-# Plotting both time series
+#Plotting both time series
 plot.ts(y$CPI, main = "Consumer Price Index For All Urban Consumers", ylab = "CPIAUC", col = "red")
 plot.ts(y$M2, main = "M2 Money Supply", ylab = "M2 (Billions)", col = "blue")
 
-#################
-# Examining CPI #
-#################
-
-# Mean and standard deviation of CPI ts
+#Mean and standard deviation of CPI ts
 mean(y$CPI)
 sd(y$CPI)
 
@@ -46,7 +42,8 @@ y_decomp_mult = decompose(y$CPI, type = "multiplicative")
 plot(y_decomp_mult$trend)
 plot.ts(y_decomp_mult$seasonal[1:12])
 
-# MAPE
+
+#MAPE
 mape = function(pred,true){
   return(mean ( abs( (pred - true) / true ) ,na.rm=T))
 }
@@ -59,8 +56,6 @@ print(mape(y_pred_add, y$CPI))
 print(mape(y_pred_mult, y$CPI))
 
 #Trend and Seasonality in Additive Plot
-plot.ts(y_decomp$trend, main = "Additive Trend Plot (CPI)", ylab = 'Trend',col = 'red')
-plot.ts(y_decomp$seasonal[1:12], main = "Additive Seasonality Plot (CPI)", ylab = 'Seasonal Effect', col = 'blue')  
 
 ################
 # Examining M2 #
