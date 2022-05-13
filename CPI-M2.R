@@ -126,10 +126,6 @@ acf(diff(y$M2)); pacf(diff(log(y$M2)))
 # Forecasting models #
 ######################
 
-ndiffs(y$CPI)
-cpi.diff = diff(diff(y$CPI))
-kpss.test(cpi_diff)
-
 # Training/test split (80%/20%)
 i_train = ceiling(0.80*nrow(CPI))
 CPI$DATE[i_train]
@@ -137,7 +133,7 @@ CPI$DATE[i_train]
 # CPI
 cpi_train = window(y$CPI, end=c(2020,3))
 cpi_test = window(y$CPI, start=c(2020,4))
-plot.ts(cpi_train, main="Differenced CPI Test/Train Split", ylab="CPI (differenced)", xlim=c(2012, 2022), ylim=c(230,290))
+plot.ts(cpi_train, main="CPI Test/Train Split", ylab="CPI", xlim=c(2012, 2022), ylim=c(230,290))
 lines(cpi_test, col="red")
 legend(x="topleft", legend=c("train", "test"), col=c("black", "red"))
 
@@ -157,14 +153,61 @@ arimaorder(arima.model)
 mape(arima.pred, cpi_train)
 
 arima.fc = forecast(arima.model, h=length(cpi_test))$mean
-plot.ts(y$CPI, xlim=c(2012, 2022))#, ylim=c(-2,3))
+plot.ts(cpi_train, xlim=c(2012, 2022), ylim=c(230,290), main="ARIMA-Forecasted CPI", ylab="CPI")
+lines(cpi_test, col="red")
 lines(arima.fc, col="blue")
+legend(x="topleft", legend=c("train", "test", "forecast"), col=c("black", "red", "blue"))
 mape(arima.fc, cpi_test)
 
 ##### VARMA model
-y_diff = data.frame(apply(y, MARGIN=2, FUN=diff))
+ndiffs(y$M2)
+y.diff = data.frame(apply(y, MARGIN=2, FUN=function(y){diff(diff(y))}))
+y.diff = ts(y.diff, start=c(2012, 1), frequency=12)
+kpss.test(y.diff[,"CPI"])
 
-grangertest(cpi ~ M2, data=y_diff) # p < 0.05 --- M2 needed to predict CPI
-grangertest(M2 ~ cpi, data=y_diff) # p > 0.05 --- CPI not needed to predict M2
+grangertest(CPI ~ M2, data=y.diff, order=12) # p < 0.05 --- M2 needed to predict CPI
+grangertest(M2 ~ CPI, data=y.diff, order=12) # p > 0.05 --- CPI not needed to predict M2
+
+y.train = window(y.diff, end=c(2020,3))
+y.test = window(y.diff, start=c(2020,4))
+
+Eccm(y.train, maxp=12, maxq=12) # try VARMA(5,0) and VARMA(2,1)
+var1 = VARMA(y.train, p=5, q=0, include.mean=FALSE)
+var2 = VARMA(y.train, p=2, q=1, include.mean=FALSE)
+var1$aic; var2$aic # VARMA(5,0) is sufficient
+
+constrained.var = refVARMA(var1, thres=2)
+constrained.var$Phi
+
+constrained.var$aic
+
+y.pred = VARMApred(constrained.var, h=nrow(y.test))$pred
+
+y.true = rbind(y[1,], y.train, y.test)
+y.pred = rbind(y[1,], y.train, y.pred)
+
+y.true = apply(y.true, MARGIN=2, FUN=cumsum)
+y.pred = apply(y.pred, MARGIN=2, FUN=cumsum)
+
+y.true = ts(y.true, start=c(2012, 1), frequency=12)
+y.pred = ts(y.pred, start=c(2012, 1), frequency=12)
+
+cpi.pred = y.pred[, "CPI"]
+cpi.pred.train = window(cpi.pred, end=c(2020,3))
+cpi.pred.test = window(cpi.pred, start=c(2020,4))
+plot.ts(cpi_train, main="VARMA-predicted CPI", xlim=c(2012, 2022), ylim=c(220,290))
+lines(cpi.pred.train, col="green")
+lines(cpi_test, col="blue")
+lines(cpi.pred.test, col="red")
+legend(x="topleft", legend=c("train", "test", "fc.train", "fc.test"), col=c("black", "red", "blue"))
+
+mape(cpi.pred.train, cpi_train)
+mape(cpi.pred.test, cpi_test)
+
+
+
+
+
+
 
 
